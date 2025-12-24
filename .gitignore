@@ -6,6 +6,39 @@ yarn-debug.log*
 yarn-error.log*
 lerna-debug.log*
 
+# OS / IDE
+.DS_Store
+Thumbs.db
+.vscode/
+.vs/
+.idea/
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# .NET build output
+bin/
+obj/
+artifacts/
+TestResults/
+*.VisualState.xml
+*.TestResult.xml
+*.coverage
+*.coveragexml
+*.trx
+
+# NuGet
+*.nupkg
+*.snupkg
+*.nuspec
+/.nuget/
+packages/
+
+# Playwright
+playwright/.cache
+playwright/.local-browsers
+
 # Diagnostic reports (https://nodejs.org/api/report.html)
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
@@ -40,6 +73,11 @@ build/Release
 # Dependency directories
 node_modules/
 jspm_packages/
+
+# pnpm store
+pnpm-lock.yaml
+pnpm-workspace.yaml
+*.pnpm-debug.log
 
 # Snowpack dependency directory (https://snowpack.dev/)
 web_modules/
