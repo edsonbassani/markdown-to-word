@@ -36,6 +36,9 @@ jobs:
             **/*.csproj
             **/global.json
 
+      - name: Install Playwright CLI
+        run: dotnet tool install --global Microsoft.Playwright.CLI
+
       - name: Ensure Playwright CLI on PATH
         run: echo "$HOME/.dotnet/tools" >> "$GITHUB_PATH"
 
