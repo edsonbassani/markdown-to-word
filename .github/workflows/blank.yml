@@ -70,11 +70,8 @@ jobs:
       - name: Install Playwright CLI and browser
         run: |
           dotnet tool update --global Microsoft.Playwright.CLI
-          # Tenta instalar sem dependências primeiro
           playwright install chromium || echo "Continuing despite browser installation failure"
-          # Depois tenta instalar as dependências manualmente
           playwright install-deps || sudo apt-get install -y libasound2t64
-          # Tenta novamente instalar o Chromium
           playwright install chromium
 
       - name: Ensure Playwright CLI on PATH
