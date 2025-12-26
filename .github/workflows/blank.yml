@@ -39,10 +39,11 @@ jobs:
       - name: Restore
         run: dotnet restore MarkdownToWord.sln
 
-      - name: Install Playwright (Chromium)
-        run: |
-          dotnet add package Microsoft.Playwright
-        working-directory: src
+      - name: Install Playwright package
+        run: cd src && dotnet add package Microsoft.Playwright
+
+      - name: Build Playwright
+        run: dotnet build MarkdownToWord.sln --configuration Release --no-restore
 
       - name: Install Playwright CLI and browser
         run: |
