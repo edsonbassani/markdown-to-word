@@ -36,19 +36,17 @@ jobs:
             **/*.csproj
             **/global.json
 
-      - name: Install Playwright CLI
-        run: dotnet tool install --global Microsoft.Playwright.CLI
+      - name: Install Playwright (Chromium)
+        run: |
+          dotnet add package Microsoft.Playwright
+          dotnet tool update --global Microsoft.Playwright.CLI
+          playwright install --with-deps chromium
 
       - name: Ensure Playwright CLI on PATH
         run: echo "$HOME/.dotnet/tools" >> "$GITHUB_PATH"
 
       - name: Restore
         run: dotnet restore MarkdownToWord.sln
-
-      - name: Install Playwright (Chromium)
-        run: |
-          dotnet tool update --global Microsoft.Playwright.CLI
-          playwright install --with-deps chromium
 
       - name: Build
         run: dotnet build MarkdownToWord.sln --configuration Release --no-restore
