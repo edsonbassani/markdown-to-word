@@ -41,7 +41,9 @@ jobs:
 
       - name: Install Playwright (Chromium)
         run: |
+          cd src
           dotnet add package Microsoft.Playwright
+          cd ..
           dotnet tool update --global Microsoft.Playwright.CLI
           playwright install --with-deps chromium
 
@@ -49,13 +51,13 @@ jobs:
         run: echo "$HOME/.dotnet/tools" >> "$GITHUB_PATH"
 
       - name: Build
-        run: dotnet build /MarkdownToWord.sln --configuration Release --no-restore
+        run: dotnet build MarkdownToWord.sln --configuration Release --no-restore
 
       - name: Test
-        run: dotnet test /MarkdownToWord.sln --configuration Release --no-build --logger "trx;LogFileName=test-results.trx" --results-directory ./TestResults --collect:"XPlat Code Coverage"
+        run: dotnet test MarkdownToWord.sln --configuration Release --no-build --logger "trx;LogFileName=test-results.trx" --results-directory ./TestResults --collect:"XPlat Code Coverage"
 
       - name: Pack
-        run: dotnet pack src/MarkdownToWord/md2word.csproj --configuration Release --no-build --output ./artifacts
+        run: dotnet pack src/md2word.csproj --configuration Release --no-build --output ./artifacts
 
       - name: Upload artifacts
         if: always()
