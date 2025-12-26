@@ -28,7 +28,7 @@
   </PropertyGroup>
   
   <ItemGroup>
-    <None Include="../README.md" Pack="true" PackagePath="\README.md" />
+    <None Include="$(MSBuildProjectDirectory)\..\README.md" Pack="true" PackagePath="README.md" />
     <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
     <PackageReference Include="Markdig" Version="0.34.0" />
     <PackageReference Include="DocumentFormat.OpenXml" Version="3.2.0" />
