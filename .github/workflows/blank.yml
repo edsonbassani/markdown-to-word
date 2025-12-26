@@ -44,7 +44,7 @@ jobs:
           dotnet add package Microsoft.Playwright
           dotnet tool update --global Microsoft.Playwright.CLI
           playwright install --with-deps chromium
-        working-directory: .
+        working-directory: src/MarkdownToWord
 
       - name: Ensure Playwright CLI on PATH
         run: echo "$HOME/.dotnet/tools" >> "$GITHUB_PATH"
