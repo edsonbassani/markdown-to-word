@@ -1,5 +1,7 @@
 name: Release - Publish to NuGet
 
+name: Release - Publish to NuGet
+
 on:
   workflow_call:
     inputs:
@@ -28,7 +30,24 @@ env:
 
 jobs:
   publish:
-    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - rid: win-x64
+            runs-on: windows-latest
+            playwright-platform: win32
+            zip-cmd: powershell -Command "Compress-Archive -Path publish/win-x64, pw-browsers -DestinationPath artifacts/md2word-win-x64.zip"
+          - rid: linux-x64
+            runs-on: ubuntu-latest
+            playwright-platform: linux
+            install-deps: true
+            zip-cmd: zip -r artifacts/md2word-linux-x64.zip publish/linux-x64 pw-browsers
+          - rid: osx-x64
+            runs-on: macos-latest
+            playwright-platform: mac
+            zip-cmd: zip -r artifacts/md2word-osx-x64.zip publish/osx-x64 pw-browsers
+    runs-on: ${{ matrix.runs-on }}
 
     steps:
       - name: Checkout
@@ -45,10 +64,8 @@ jobs:
             **/*.csproj
             **/global.json
 
-      - name: Ensure Playwright CLI on PATH
-        run: echo "$HOME/.dotnet/tools" >> "$GITHUB_PATH"
-
-      - name: Install Playwright system dependencies
+      - name: Install Playwright system dependencies (Linux only)
+        if: ${{ matrix.install-deps == true }}
         run: |
           sudo apt-get update
           sudo apt-get install -y \
@@ -73,10 +90,14 @@ jobs:
       - name: Restore
         run: dotnet restore MarkdownToWord.sln
 
-      - name: Install Playwright CLI and browser
-        run: |
-          dotnet tool update --global Microsoft.Playwright.CLI
-          playwright install chromium
+      - name: Install Playwright CLI
+        run: dotnet tool update --global Microsoft.Playwright.CLI
+
+      - name: Install Playwright browser
+        env:
+          PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/pw-browsers
+          PLAYWRIGHT_DOWNLOAD_HOST: https://playwright.azureedge.net
+        run: playwright install chromium --with-deps
 
       - name: Build
         run: dotnet build MarkdownToWord.sln --configuration Release --no-restore
@@ -84,38 +105,46 @@ jobs:
       - name: Test
         run: dotnet test MarkdownToWord.sln --configuration Release --no-build --logger "trx;LogFileName=test-results.trx" --results-directory ./TestResults --collect:"XPlat Code Coverage"
 
-      - name: Pack
+      - name: Pack (NuGet) [linux only]
+        if: ${{ matrix.rid == 'linux-x64' }}
         run: dotnet pack src/md2word.csproj --configuration Release --no-build --output ./artifacts
 
       - name: Publish self-contained executables
+        env:
+          PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/pw-browsers
         run: |
-          dotnet publish src/md2word.csproj -c Release -r win-x64 --self-contained -o ./publish/win-x64 /p:PlaywrightPlatform=win-x64
-          dotnet publish src/md2word.csproj -c Release -r linux-x64 --self-contained -o ./publish/linux-x64 /p:PlaywrightPlatform=linux
-          dotnet publish src/md2word.csproj -c Release -r osx-x64 --self-contained -o ./publish/osx-x64 /p:PlaywrightPlatform=osx
+          dotnet publish src/md2word.csproj -c Release -r ${{ matrix.rid }} --self-contained -o ./publish/${{ matrix.rid }} /p:PlaywrightPlatform=${{ matrix.playwright-platform }}
 
-      - name: Create ZIP packages
-        run: |
-          cd publish
-          zip -r ../artifacts/md2word-win-x64.zip win-x64
-          zip -r ../artifacts/md2word-linux-x64.zip linux-x64
-          zip -r ../artifacts/md2word-osx-x64.zip osx-x64
+      - name: Create ZIP package
+        run: ${{ matrix.zip-cmd }}
 
-      - name: Upload package artifact
+      - name: Upload platform artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: nupkg-${{ github.run_id }}
+          name: md2word-${{ matrix.rid }}
+          path: artifacts/md2word-${{ matrix.rid }}.zip
+          retention-days: 7
+
+      - name: Upload NuGet artifact [linux only]
+        if: ${{ always() && matrix.rid == 'linux-x64' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: nupkg
           path: artifacts/*.nupkg
           retention-days: 7
 
-      - name: Upload release artifacts
-        if: always()
-        uses: actions/upload-artifact@v4
+  release:
+    runs-on: ubuntu-latest
+    needs: publish
+    steps:
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
         with:
-          name: release-packages-${{ github.run_id }}
-          path: |
-            artifacts/*.zip
-          retention-days: 7
+          path: dist
+
+      - name: List downloaded files
+        run: ls -R dist
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
@@ -125,9 +154,10 @@ jobs:
           draft: false
           prerelease: false
           files: |
-            artifacts/*.nupkg
-            artifacts/*.zip
+            dist/md2word-*/md2word-*.zip
+            dist/nupkg/*.nupkg
           generate_release_notes: true
 
       - name: Publish to NuGet
+        run: dotnet nuget push "dist/nupkg/*.nupkg" --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
         run: dotnet nuget push "artifacts/*.nupkg" --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
