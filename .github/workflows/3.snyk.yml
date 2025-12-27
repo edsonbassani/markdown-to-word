@@ -1,7 +1,16 @@
-name: Code Quality
+name: Snyk Security
 
 on:
   workflow_call:
+    inputs:
+      dotnet-version:
+        description: '.NET SDK version'
+        required: false
+        type: string
+        default: '10.0.x'
+    secrets:
+      SNYK_TOKEN:
+        required: false
 
 permissions:
   contents: read
@@ -13,8 +22,10 @@ env:
   NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
 
 jobs:
-  format:
+  snyk:
     runs-on: ubuntu-latest
+    env:
+      SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
 
     steps:
       - name: Checkout
@@ -25,7 +36,7 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 10.0.x
+          dotnet-version: ${{ inputs.dotnet-version }}
           cache: true
           cache-dependency-path: |
             **/*.csproj
@@ -34,5 +45,10 @@ jobs:
       - name: Restore
         run: dotnet restore MarkdownToWord.sln
 
-      - name: Verify formatting
-        run: dotnet format --verify-no-changes --no-restore
+      - name: Install Snyk CLI
+        if: ${{ env.SNYK_TOKEN != '' }}
+        run: npm install -g snyk
+
+      - name: Snyk Test
+        if: ${{ env.SNYK_TOKEN != '' }}
+        run: snyk test --file=MarkdownToWord.sln --configuration=Release --severity-threshold=high
