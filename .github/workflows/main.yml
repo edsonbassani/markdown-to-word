@@ -8,6 +8,14 @@ on:
     branches: [ "development", "main" ]
   workflow_dispatch:
 
+permissions:
+  actions: read
+  contents: read
+  security-events: write
+  packages: write
+  pull-requests: read
+  statuses: write
+
 jobs:
   codeql:
     uses: ./.github/workflows/2.codeql.yml
@@ -18,6 +26,9 @@ jobs:
       security-events: write
       contents: read
       actions: read
+      packages: read
+      pull-requests: read
+      statuses: write
 
   snyk:
     uses: ./.github/workflows/3.snyk.yml
