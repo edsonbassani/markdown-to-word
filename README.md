@@ -1,10 +1,10 @@
 ﻿# MarkdownToWord (md2word)
 
-[![Code Quality](https://github.com/edsonbassani/markdown-to-word/actions/workflows/2.codeql.yml/badge.svg)](https://github.com/edsonbassani/markdown-to-word/actions/workflows/2.codeql.yml)
+[![Build](https://github.com/edsonbassani/markdown-to-word/actions/workflows/main.yml/badge.svg)](https://github.com/edsonbassani/markdown-to-word/actions/workflows/main.yml)
+[![CodeQL](https://github.com/edsonbassani/markdown-to-word/actions/workflows/2.codeql.yml/badge.svg)](https://github.com/edsonbassani/markdown-to-word/actions/workflows/2.codeql.yml)
 [![Snyk Security](https://github.com/edsonbassani/markdown-to-word/actions/workflows/3.snyk.yml/badge.svg)](https://github.com/edsonbassani/markdown-to-word/actions/workflows/3.snyk.yml)
-[![Build](https://github.com/edsonbassani/markdown-to-word/actions/workflows/4.build.yml/badge.svg)](https://github.com/edsonbassani/markdown-to-word/actions/workflows/4.build.yml)
-[![Publish](https://github.com/edsonbassani/markdown-to-word/actions/workflows/5.publish.yml/badge.svg)](https://github.com/edsonbassani/markdown-to-word/actions/workflows/5.publish.yml)
-[![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![NuGet](https://img.shields.io/nuget/v/md2word.svg)](https://www.nuget.org/packages/md2word)
+[![License](https://img.shields.io/github/license/edsonbassani/markdown-to-word)](LICENSE)
 
 A powerful .NET CLI tool that converts Markdown documents (including Mermaid diagrams) into professional Word (.docx) documents with full formatting preservation.
 
