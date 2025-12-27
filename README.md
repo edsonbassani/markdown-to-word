@@ -1,8 +1,6 @@
 ﻿# MarkdownToWord (md2word)
 
 [![Build](https://github.com/edsonbassani/markdown-to-word/actions/workflows/main.yml/badge.svg)](https://github.com/edsonbassani/markdown-to-word/actions/workflows/main.yml)
-[![CodeQL](https://github.com/edsonbassani/markdown-to-word/actions/workflows/2.codeql.yml/badge.svg)](https://github.com/edsonbassani/markdown-to-word/actions/workflows/2.codeql.yml)
-[![Snyk Security](https://github.com/edsonbassani/markdown-to-word/actions/workflows/3.snyk.yml/badge.svg)](https://github.com/edsonbassani/markdown-to-word/actions/workflows/3.snyk.yml)
 [![NuGet](https://img.shields.io/nuget/v/md2word.svg)](https://www.nuget.org/packages/md2word)
 [![License](https://img.shields.io/github/license/edsonbassani/markdown-to-word)](LICENSE)
 
