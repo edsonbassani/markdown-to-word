@@ -89,9 +89,9 @@ jobs:
 
       - name: Publish self-contained executables
         run: |
-          dotnet publish src/md2word.csproj -c Release -r win-x64 --self-contained -o ./publish/win-x64
-          dotnet publish src/md2word.csproj -c Release -r linux-x64 --self-contained -o ./publish/linux-x64
-          dotnet publish src/md2word.csproj -c Release -r osx-x64 --self-contained -o ./publish/osx-x64
+          dotnet publish src/md2word.csproj -c Release -r win-x64 --self-contained -o ./publish/win-x64 /p:PlaywrightPlatform=win-x64
+          dotnet publish src/md2word.csproj -c Release -r linux-x64 --self-contained -o ./publish/linux-x64 /p:PlaywrightPlatform=linux
+          dotnet publish src/md2word.csproj -c Release -r osx-x64 --self-contained -o ./publish/osx-x64 /p:PlaywrightPlatform=osx
 
       - name: Create ZIP packages
         run: |
