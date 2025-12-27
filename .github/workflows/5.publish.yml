@@ -87,17 +87,35 @@ jobs:
             libasound2t64 \
             libpangocairo-1.0-0
 
+      - name: Install Playwright system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libatk1.0-0 \
+            libatk-bridge2.0-0 \
+            libcups2 \
+            libdbus-1-3 \
+            libdrm2 \
+            libgbm1 \
+            libgtk-3-0 \
+            libnspr4 \
+            libnss3 \
+            libxcomposite1 \
+            libxdamage1 \
+            libxfixes3 \
+            libxkbcommon0 \
+            libxrandr2 \
+            libxshmfence1 \
+            libasound2t64 \
+            libpangocairo-1.0-0
+
       - name: Restore
         run: dotnet restore MarkdownToWord.sln
 
-      - name: Install Playwright CLI
-        run: dotnet tool update --global Microsoft.Playwright.CLI
-
-      - name: Install Playwright browser
-        env:
-          PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/pw-browsers
-          PLAYWRIGHT_DOWNLOAD_HOST: https://playwright.azureedge.net
-        run: playwright install chromium --with-deps
+      - name: Install Playwright CLI and browser
+        run: |
+          dotnet tool update --global Microsoft.Playwright.CLI
+          playwright install chromium
 
       - name: Build
         run: dotnet build MarkdownToWord.sln --configuration Release --no-restore
@@ -113,7 +131,9 @@ jobs:
         env:
           PLAYWRIGHT_BROWSERS_PATH: ${{ github.workspace }}/pw-browsers
         run: |
-          dotnet publish src/md2word.csproj -c Release -r ${{ matrix.rid }} --self-contained -o ./publish/${{ matrix.rid }} /p:PlaywrightPlatform=${{ matrix.playwright-platform }}
+          dotnet publish src/md2word.csproj -c Release -r win-x64 --self-contained -o ./publish/win-x64 /p:PlaywrightPlatform=win-x64
+          dotnet publish src/md2word.csproj -c Release -r linux-x64 --self-contained -o ./publish/linux-x64 /p:PlaywrightPlatform=linux
+          dotnet publish src/md2word.csproj -c Release -r osx-x64 --self-contained -o ./publish/osx-x64 /p:PlaywrightPlatform=osx
 
       - name: Create ZIP package
         run: ${{ matrix.zip-cmd }}
