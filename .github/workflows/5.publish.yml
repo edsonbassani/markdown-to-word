@@ -13,7 +13,7 @@ on:
         required: true
 
 permissions:
-  contents: read
+  contents: write
   packages: write
 
 concurrency:
@@ -63,7 +63,20 @@ jobs:
         run: dotnet test MarkdownToWord.sln --configuration Release --no-build --logger "trx;LogFileName=test-results.trx" --results-directory ./TestResults --collect:"XPlat Code Coverage"
 
       - name: Pack
-        run: dotnet pack src/MarkdownToWord/md2word.csproj --configuration Release --no-build --output ./artifacts
+        run: dotnet pack src/md2word.csproj --configuration Release --no-build --output ./artifacts
+
+      - name: Publish self-contained executables
+        run: |
+          dotnet publish src/md2word.csproj -c Release -r win-x64 --self-contained -o ./publish/win-x64
+          dotnet publish src/md2word.csproj -c Release -r linux-x64 --self-contained -o ./publish/linux-x64
+          dotnet publish src/md2word.csproj -c Release -r osx-x64 --self-contained -o ./publish/osx-x64
+
+      - name: Create ZIP packages
+        run: |
+          cd publish
+          zip -r ../artifacts/md2word-win-x64.zip win-x64
+          zip -r ../artifacts/md2word-linux-x64.zip linux-x64
+          zip -r ../artifacts/md2word-osx-x64.zip osx-x64
 
       - name: Upload package artifact
         if: always()
@@ -72,6 +85,27 @@ jobs:
           name: nupkg-${{ github.run_id }}
           path: artifacts/*.nupkg
           retention-days: 7
+
+      - name: Upload release artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-packages-${{ github.run_id }}
+          path: |
+            artifacts/*.zip
+          retention-days: 7
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ github.run_number }}
+          name: Release v${{ github.run_number }}
+          draft: false
+          prerelease: false
+          files: |
+            artifacts/*.nupkg
+            artifacts/*.zip
+          generate_release_notes: true
 
       - name: Publish to NuGet
         run: dotnet nuget push "artifacts/*.nupkg" --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
