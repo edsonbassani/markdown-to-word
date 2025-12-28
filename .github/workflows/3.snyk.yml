@@ -1,0 +1,54 @@
+name: Snyk Security
+
+on:
+  workflow_call:
+    inputs:
+      dotnet-version:
+        description: '.NET SDK version'
+        required: false
+        type: string
+        default: '10.0.x'
+    secrets:
+      SNYK_TOKEN:
+        required: false
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
+  DOTNET_NOLOGO: 1
+  DOTNET_CLI_TELEMETRY_OPTOUT: 1
+  NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
+
+jobs:
+  snyk:
+    runs-on: ubuntu-latest
+    env:
+      SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ inputs.dotnet-version }}
+          cache: true
+          cache-dependency-path: |
+            **/*.csproj
+            **/global.json
+
+      - name: Restore
+        run: dotnet restore MarkdownToWord.sln
+
+      - name: Install Snyk CLI
+        if: ${{ env.SNYK_TOKEN != '' }}
+        run: npm install -g snyk
+
+      - name: Snyk Test
+        if: ${{ env.SNYK_TOKEN != '' }}
+        run: snyk test --file=MarkdownToWord.sln --configuration=Release --severity-threshold=high

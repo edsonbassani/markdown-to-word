@@ -1,0 +1,91 @@
+# .github/workflows/build.yml
+name: Build with Playwright
+
+on:
+  workflow_call:
+    inputs:
+      dotnet-version:
+        description: '.NET SDK version'
+        required: false
+        type: string
+        default: '10.0.x'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ inputs.dotnet-version }}
+          cache: true
+          cache-dependency-path: |
+            **/*.csproj
+            **/global.json
+
+      - name: Install Playwright system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libatk1.0-0 \
+            libatk-bridge2.0-0 \
+            libcups2 \
+            libdbus-1-3 \
+            libdrm2 \
+            libgbm1 \
+            libgtk-3-0 \
+            libnspr4 \
+            libnss3 \
+            libxcomposite1 \
+            libxdamage1 \
+            libxfixes3 \
+            libxkbcommon0 \
+            libxrandr2 \
+            libxshmfence1 \
+            libasound2t64 \
+            libpangocairo-1.0-0
+
+      - name: Restore
+        run: dotnet restore MarkdownToWord.sln
+
+      - name: Install Playwright package
+        run: cd src && dotnet add package Microsoft.Playwright
+
+      - name: Build Playwright
+        run: dotnet build MarkdownToWord.sln --configuration Release --no-restore
+
+      - name: Install Playwright CLI and browser
+        run: |
+          dotnet tool update --global Microsoft.Playwright.CLI
+          playwright install chromium || echo "Continuing despite browser installation failure"
+          playwright install-deps || sudo apt-get install -y libasound2t64
+          playwright install chromium
+
+      - name: Ensure Playwright CLI on PATH
+        run: echo "$HOME/.dotnet/tools" >> "$GITHUB_PATH"
+
+      - name: Build
+        run: dotnet build MarkdownToWord.sln --configuration Release --no-restore
+
+      - name: Test
+        run: dotnet test MarkdownToWord.sln --configuration Release --no-build --logger "trx;LogFileName=test-results.trx" --results-directory ./TestResults --collect:"XPlat Code Coverage"
+
+      - name: Pack
+        run: dotnet pack src/md2word.csproj --configuration Release --no-build --output ./artifacts
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-artifacts-${{ github.run_id }}
+          path: |
+            artifacts/*.nupkg
+            TestResults
+          retention-days: 10
