@@ -121,6 +121,9 @@ public class WordGenerator : IWordGenerator
         var mainPart = document.MainDocumentPart ?? throw new InvalidOperationException("Document has no main part");
         var body = mainPart.Document.Body ?? throw new InvalidOperationException("Document has no body");
 
+        // Ensure numbering definitions exist for lists
+        EnsureNumberingDefinitions(mainPart);
+
         // Replace placeholders if any
         if (placeholders.IsLoaded)
         {
@@ -173,6 +176,72 @@ public class WordGenerator : IWordGenerator
         using var document = WordprocessingDocument.Create(path, WordprocessingDocumentType.Document);
         var mainPart = document.AddMainDocumentPart();
         mainPart.Document = new Document(new Body());
+    }
+
+    /// <summary>
+    /// Ensures numbering definitions exist for bullet and numbered lists.
+    /// </summary>
+    private void EnsureNumberingDefinitions(MainDocumentPart mainPart)
+    {
+        // Check if numbering definitions already exist
+        if (mainPart.NumberingDefinitionsPart != null)
+        {
+            return;
+        }
+
+        // Create numbering definitions part
+        var numberingPart = mainPart.AddNewPart<NumberingDefinitionsPart>();
+        var numbering = new Numbering();
+
+        // Create abstract numbering definition for numbered lists (1, 2, 3...)
+        var abstractNum1 = new AbstractNum { AbstractNumberId = 1 };
+        abstractNum1.AppendChild(new MultiLevelType { Val = MultiLevelValues.HybridMultilevel });
+
+        var level1 = new Level { LevelIndex = 0 };
+        level1.AppendChild(new StartNumberingValue { Val = 1 });
+        level1.AppendChild(new NumberingFormat { Val = NumberFormatValues.Decimal });
+        level1.AppendChild(new LevelText { Val = "%1." });
+        level1.AppendChild(new LevelJustification { Val = LevelJustificationValues.Left });
+        var pProp1 = new PreviousParagraphProperties();
+        pProp1.AppendChild(new Indentation { Left = "720", Hanging = "360" });
+        level1.AppendChild(pProp1);
+        abstractNum1.AppendChild(level1);
+
+        // Create abstract numbering definition for bullet lists (•)
+        var abstractNum2 = new AbstractNum { AbstractNumberId = 2 };
+        abstractNum2.AppendChild(new MultiLevelType { Val = MultiLevelValues.HybridMultilevel });
+
+        var level2 = new Level { LevelIndex = 0 };
+        level2.AppendChild(new StartNumberingValue { Val = 1 });
+        level2.AppendChild(new NumberingFormat { Val = NumberFormatValues.Bullet });
+        level2.AppendChild(new LevelText { Val = "●" });
+        level2.AppendChild(new LevelJustification { Val = LevelJustificationValues.Left });
+        var pProp2 = new PreviousParagraphProperties();
+        pProp2.AppendChild(new Indentation { Left = "720", Hanging = "360" });
+        level2.AppendChild(pProp2);
+        var runProp2 = new NumberingSymbolRunProperties();
+        runProp2.AppendChild(new RunFonts { Hint = FontTypeHintValues.Default, Ascii = "Calibri", HighAnsi = "Calibri", ComplexScript = "Calibri" });
+        level2.AppendChild(runProp2);
+        abstractNum2.AppendChild(level2);
+
+        // Add abstract numbering definitions
+        numbering.AppendChild(abstractNum1);
+        numbering.AppendChild(abstractNum2);
+
+        // Create numbering instances
+        var numInstance1 = new NumberingInstance { NumberID = 1 };
+        numInstance1.AppendChild(new AbstractNumId { Val = 1 });
+
+        var numInstance2 = new NumberingInstance { NumberID = 2 };
+        numInstance2.AppendChild(new AbstractNumId { Val = 2 });
+
+        numbering.AppendChild(numInstance1);
+        numbering.AppendChild(numInstance2);
+
+        numberingPart.Numbering = numbering;
+        numberingPart.Numbering.Save();
+
+        _logger.LogDebug("Created numbering definitions for lists");
     }
 
     /// <summary>

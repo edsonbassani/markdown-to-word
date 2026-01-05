@@ -114,8 +114,8 @@ Create a `placeholders.json` file **in the same directory** as your Markdown fil
 {
   "{{TITLE}}": "Q4 2024 Technical Report",
   "{{AUTHOR}}": "John Smith",
-  "{{DATE}}": "2024-12-20",
-  "{{VERSION}}": "1.0.0",
+  "{{DATE}}": "2026-01-04",
+  "{{VERSION}}": "1.1.0",
   "{{CLIENT}}": "Acme Corporation"
 }
 ```
@@ -514,4 +514,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 **Star ⭐ this repository if you find it helpful!**
 
-[![Download](https://img.shields.io/badge/Download-Latest%20Release-blue?style=for-the-badge&logo=github)](https://github.com/edsonbassani/markdown-to-word/releases/latest)
+[![Download](https://img.shields.io/badge/Download-Latest%20Release-blue?style=for-the-badge&logo=nuget)](https://www.nuget.org/api/v2/package/md2word)
