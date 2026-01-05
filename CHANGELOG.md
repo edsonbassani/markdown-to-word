@@ -14,6 +14,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Accepts both `---pagebreak` and `--- pagebreak` formats
   - Distinguishes from horizontal rules (`---`)
 
+## [1.1.0] - 2026-01-04
+
+### 🐛 Fixed
+- ✅ Fixed bullet point conversion for markdown lists starting with dash (-)
+  - Lists with dash markers are now properly converted to Word bullet points
+  - Added automatic numbering definitions creation for documents without templates
+  - Both ordered (numbered) and unordered (bullet) lists now render correctly
+  - Fixed bullet rendering to display as filled black circles (●) instead of empty rectangles
+  - Changed bullet font from Symbol to Calibri for better cross-platform compatibility
+
+### 🔧 Changed
+- Updated copyright year to 2026
+- Improved list handling in WordGenerator service
+- Enhanced bullet character rendering with proper font configuration
+
+### ⚠️ Deprecation Notice
+- Version 1.0.0 is now deprecated. Please upgrade to 1.1.0 for proper list rendering.
+
 ## [1.0.0] - 2025-12-20
 
 ### 🎉 Initial Release
