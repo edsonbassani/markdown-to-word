@@ -14,6 +14,8 @@ public sealed class MermaidRenderer : IMermaidRenderer
     private const int DefaultViewportWidth = 3840;
     private const int DefaultViewportHeight = 2160;
     private const int DeviceScale = 3;
+    private const int MaxRetryAttempts = 3;
+    private const int InitialRetryDelayMs = 1000;
 
     private readonly ILogger<MermaidRenderer> _logger;
     private readonly SemaphoreSlim _initLock = new(1, 1);
@@ -78,6 +80,99 @@ public sealed class MermaidRenderer : IMermaidRenderer
         }
 
         throw new InvalidOperationException("No compatible browser found. Please install Microsoft Edge or Google Chrome.");
+    }
+
+    /// <summary>
+    /// Checks if the browser is healthy and ready to use.
+    /// </summary>
+    private async Task<bool> IsBrowserHealthyAsync()
+    {
+        if (_browser is null || !_initialized)
+        {
+            return false;
+        }
+
+        try
+        {
+            // Try to check if browser is still connected
+            return _browser.IsConnected;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Resets the browser state to allow reinitialization.
+    /// </summary>
+    private void ResetBrowserState()
+    {
+        _browser = null;
+        _initialized = false;
+        _logger.LogWarning("Browser state reset - will reinitialize on next attempt");
+    }
+
+    /// <summary>
+    /// Renders a diagram with retry logic and browser recovery.
+    /// </summary>
+    public async Task<byte[]> RenderDiagramWithRetryAsync(
+        MermaidDiagram diagram,
+        int? pageWidthInPixels = null,
+        CancellationToken cancellationToken = default)
+    {
+        var attempt = 0;
+        Exception? lastException = null;
+
+        while (attempt < MaxRetryAttempts)
+        {
+            attempt++;
+            try
+            {
+                // Check browser health before attempting render
+                if (!await IsBrowserHealthyAsync())
+                {
+                    _logger.LogWarning("Browser unhealthy, reinitializing before attempt {Attempt}", attempt);
+                    ResetBrowserState();
+                    await InitializeAsync(cancellationToken);
+                }
+
+                var result = await RenderDiagramAsync(diagram, pageWidthInPixels, cancellationToken);
+                
+                if (attempt > 1)
+                {
+                    _logger.LogInformation(
+                        "Diagram {Position} rendered successfully on attempt {Attempt}/{Max}",
+                        diagram.Position, attempt, MaxRetryAttempts);
+                }
+                
+                return result;
+            }
+            catch (Exception ex) when (attempt < MaxRetryAttempts)
+            {
+                lastException = ex;
+                var delay = InitialRetryDelayMs * (int)Math.Pow(2, attempt - 1);
+                
+                _logger.LogWarning(
+                    ex,
+                    "Diagram {Position} failed on attempt {Attempt}/{Max}. Retrying in {Delay}ms...",
+                    diagram.Position, attempt, MaxRetryAttempts, delay);
+
+                // Reset browser state on any exception
+                ResetBrowserState();
+                
+                await Task.Delay(delay, cancellationToken);
+            }
+        }
+
+        _logger.LogError(
+            lastException,
+            "Diagram {Position} failed after {Attempts} attempts",
+            diagram.Position, MaxRetryAttempts);
+        
+        throw new InvalidOperationException(
+            $"Failed to render diagram {diagram.Position} after {MaxRetryAttempts} attempts. See inner exception for details.",
+            lastException);
     }
 
     public async Task<byte[]> RenderDiagramAsync(
@@ -167,8 +262,33 @@ public sealed class MermaidRenderer : IMermaidRenderer
         }
         catch (PlaywrightException ex) when (ex.Message.Contains("Timeout", StringComparison.OrdinalIgnoreCase))
         {
-            _logger.LogError("Timeout waiting for Mermaid diagram to render");
+            _logger.LogError(ex, "Timeout waiting for Mermaid diagram to render");
             throw new TimeoutException($"Mermaid diagram rendering timeout after {DefaultTimeoutMs}ms", ex);
+        }
+        catch (PlaywrightException ex) when (
+            ex.Message.Contains("Target page", StringComparison.OrdinalIgnoreCase) ||
+            ex.Message.Contains("context", StringComparison.OrdinalIgnoreCase) ||
+            ex.Message.Contains("browser has been closed", StringComparison.OrdinalIgnoreCase) ||
+            ex.Message.Contains("Protocol error", StringComparison.OrdinalIgnoreCase))
+        {
+            _logger.LogError(
+                ex,
+                "Browser connection lost for diagram {Position}: {Message}",
+                diagram.Position,
+                ex.Message);
+            
+            // Reset browser state so it can be reinitialized
+            ResetBrowserState();
+            throw;
+        }
+        catch (PlaywrightException ex)
+        {
+            _logger.LogError(
+                ex,
+                "Playwright error rendering diagram {Position}: {Message}",
+                diagram.Position,
+                ex.Message);
+            throw;
         }
         finally
         {
