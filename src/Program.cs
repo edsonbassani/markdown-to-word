@@ -133,6 +133,7 @@ public class Program
 
                 // Render Mermaid diagrams
                 var renderedDiagrams = new ConcurrentDictionary<int, byte[]>();
+                var failedDiagrams = new ConcurrentBag<int>();
 
                 if (markdownDoc.MermaidDiagrams.Count > 0)
                 {
@@ -154,16 +155,55 @@ public class Program
                         new ParallelOptions { MaxDegreeOfParallelism = maxDegree },
                         async (diagram, ct) =>
                         {
-                            var imageData = await mermaidRenderer.RenderDiagramAsync(
-                                diagram,
-                                diagram.RequiresProportionalWidth ? pageWidth : null,
-                                ct);
+                            try
+                            {
+                                var imageData = await mermaidRenderer.RenderDiagramWithRetryAsync(
+                                    diagram,
+                                    diagram.RequiresProportionalWidth ? pageWidth : null,
+                                    ct);
 
-                            renderedDiagrams[diagram.Position] = imageData;
+                                renderedDiagrams[diagram.Position] = imageData;
 
-                            var done = Interlocked.Increment(ref completed);
-                            logger.LogInformation("Progress: {Done}/{Total} diagrams rendered", done, total);
+                                var done = Interlocked.Increment(ref completed);
+                                logger.LogInformation("Progress: {Done}/{Total} diagrams rendered", done, total);
+                            }
+                            catch (Exception ex)
+                            {
+                                failedDiagrams.Add(diagram.Position);
+                                logger.LogError(
+                                    ex,
+                                    "Failed to render diagram at position {Position} (Type: {Type}, Layout: {Layout})",
+                                    diagram.Position,
+                                    diagram.DiagramType,
+                                    diagram.LayoutType);
+                                
+                                // Continue processing other diagrams
+                                var done = Interlocked.Increment(ref completed);
+                                logger.LogInformation("Progress: {Done}/{Total} diagrams processed (with failures)", done, total);
+                            }
                         });
+
+                    // Report rendering results
+                    var successCount = renderedDiagrams.Count;
+                    var failureCount = failedDiagrams.Count;
+                    
+                    if (failureCount > 0)
+                    {
+                        logger.LogWarning(
+                            "Diagram rendering completed with failures: {Success} succeeded, {Failed} failed. Failed positions: [{Positions}]",
+                            successCount,
+                            failureCount,
+                            string.Join(", ", failedDiagrams.OrderBy(x => x)));
+                        
+                        if (successCount == 0)
+                        {
+                            logger.LogError("All diagrams failed to render. Document will be generated without diagram images.");
+                        }
+                    }
+                    else
+                    {
+                        logger.LogInformation("All {Count} diagrams rendered successfully!", successCount);
+                    }
                 }
 
                 // Generate Word document

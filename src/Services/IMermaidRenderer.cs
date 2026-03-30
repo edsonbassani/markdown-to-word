@@ -22,6 +22,15 @@ public interface IMermaidRenderer : IAsyncDisposable
         CancellationToken cancellationToken = default);
 
     /// <summary>
+    /// Renders a Mermaid diagram with automatic retry logic and browser recovery.
+    /// Recommended for use in parallel rendering scenarios.
+    /// </summary>
+    Task<byte[]> RenderDiagramWithRetryAsync(
+        MermaidDiagram diagram,
+        int? pageWidthInPixels = null,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
     /// Renders multiple diagrams sequentially using the shared browser.
     /// </summary>
     Task<IReadOnlyList<byte[]>> RenderDiagramsBatchAsync(
