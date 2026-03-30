@@ -11,7 +11,7 @@
     <PackAsTool>true</PackAsTool>
     <ToolCommandName>md2word</ToolCommandName>
     <PackageId>md2word</PackageId>
-    <Version>1.0.1</Version>
+    <Version>1.1.1</Version>
     <Authors>Edson Bassani</Authors>
     <Company>Edson Bassani</Company>
     <Product>Markdown To Word (md2word)</Product>
@@ -23,7 +23,7 @@
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <Copyright>Copyright (c) 2026 MarkdownToWord Contributors</Copyright>
-    <PackageReleaseNotes>v1.0.1: Fixed critical browser crash during parallel Mermaid rendering - added automatic retry with browser recovery, graceful degradation, and comprehensive error handling.</PackageReleaseNotes>
+    <PackageReleaseNotes>v1.1.1: Fixed critical browser crash during parallel Mermaid rendering - added automatic retry with browser recovery, graceful degradation, and comprehensive error handling.</PackageReleaseNotes>
     <Title>Markdown To Word (md2word)</Title>
     <AssemblyName>$(MSBuildProjectName)</AssemblyName>
   </PropertyGroup>
