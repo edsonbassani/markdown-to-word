@@ -7,12 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-03-30
+
+### Fixed
+- 🐛 Fixed critical browser crash issue during parallel Mermaid diagram rendering
+  - Added automatic retry mechanism with exponential backoff (up to 3 attempts)
+  - Implemented browser health checks and automatic recovery
+  - Added comprehensive error handling for browser connection losses
+  - Parallel rendering now continues even if individual diagrams fail
+  - Browser automatically reinitializes after crashes
+  - Improved logging with detailed failure reporting
+
 ### Added
 - ✅ Page break support using `---pagebreak` syntax in Markdown
   - Creates actual page breaks in Word documents
   - Case-insensitive (works with `---pagebreak`, `---PAGEBREAK`, etc.)
   - Accepts both `---pagebreak` and `--- pagebreak` formats
   - Distinguishes from horizontal rules (`---`)
+- ✅ New `RenderDiagramWithRetryAsync` method in `IMermaidRenderer` for resilient diagram rendering
 
 ## [1.0.0] - 2025-12-20
 
